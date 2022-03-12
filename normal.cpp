@@ -1,8 +1,3 @@
-/*
-Nome: Gabriel Prost Gomes Pereira
-Turma U
-*/
-
 #include <algorithm>
 #include <array>
 #include <cinttypes>
