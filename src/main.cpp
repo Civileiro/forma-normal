@@ -19,6 +19,8 @@
 #include <GLFW/glfw3.h>
 #include <vulkan/vulkan.h>
 
+#include "forma_normal.hpp"
+
 // [Win32] Our example includes a copy of glfw3.lib pre-compiled with VS2010 to maximize ease of testing and compatibility with old VS compilers.
 // To link with VS2010-era libraries, VS2015+ requires linking with legacy_stdio_definitions.lib, which we do using this pragma.
 // Your own project should not be affected, as you are likely to link with a newer binary of GLFW that is adequate for your version of Visual Studio.
@@ -360,7 +362,7 @@ int main(int, char**)
         return 1;
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    GLFWwindow* window = glfwCreateWindow(1280, 720, "Dear ImGui GLFW+Vulkan example", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(1280, 720, "Calculadora de Formas Normais", NULL, NULL);
 
     // Setup Vulkan
     if (!glfwVulkanSupported())
@@ -459,6 +461,7 @@ int main(int, char**)
 
     // Our state
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+    FormaNormal fn;
 
     // Main loop
     while (!glfwWindowShouldClose(window))
@@ -489,7 +492,8 @@ int main(int, char**)
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-        
+        fn.drawWindowAndProcess();
+
         ImGui::ShowDemoWindow();
 
         // Rendering
