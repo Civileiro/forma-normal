@@ -3,7 +3,7 @@
 #  cd build
 #  cmake -g "Visual Studio 14 2015" ..
 
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.16)
 project(imgui_example_glfw_vulkan C CXX)
 
 if(NOT CMAKE_BUILD_TYPE)
@@ -12,6 +12,33 @@ endif()
 
 set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DVK_PROTOTYPES")
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVK_PROTOTYPES")
+
+find_package(Git QUIET)
+if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
+# Update submodules as needed
+    option(GIT_SUBMODULE "Check submodules during build" ON)
+    if(GIT_SUBMODULE)
+        message(STATUS "Submodule update")
+        execute_process(COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive
+                        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+                        RESULT_VARIABLE GIT_SUBMOD_RESULT)
+        if(NOT GIT_SUBMOD_RESULT EQUAL "0")
+            message(FATAL_ERROR "git submodule update --init --recursive failed with ${GIT_SUBMOD_RESULT}, please checkout submodules")
+        endif()
+    endif()
+endif()
+
+set(externRepos glfw utfcpp)
+
+foreach(repo IN LISTS externRepos)
+	if(NOT EXISTS "${PROJECT_SOURCE_DIR}/external/${repo}/CMakeLists.txt")
+		message(FATAL_ERROR "The submodules were not downloaded! GIT_SUBMODULE was turned off or failed. Please update submodules and try again.")
+	endif()
+endforeach()
+
+if(NOT EXISTS "${PROJECT_SOURCE_DIR}/external/imgui/imgui.h")
+	message(FATAL_ERROR "The submodules were not downloaded! GIT_SUBMODULE was turned off or failed. Please update submodules and try again.")
+endif()
 
 # GLFW
 set(GLFW_DIR external/glfw) # Set this to point to an up-to-date GLFW repo
