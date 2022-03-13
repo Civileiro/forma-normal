@@ -27,6 +27,10 @@ include_directories(${GLFW_DIR}/include)
 set(IMGUI_DIR external/imgui)
 include_directories(${IMGUI_DIR} ${IMGUI_DIR}/backends ..)
 
+# utf8 Helper
+set(UTF8_DIR external/utfcpp/source)
+include_directories(${UTF8_DIR})
+
 # Libraries
 find_package(Vulkan REQUIRED)
 #find_library(VULKAN_LIBRARY

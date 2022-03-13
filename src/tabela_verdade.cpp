@@ -1,4 +1,4 @@
-#include "normal.hpp"
+#include "tabela_verdade.hpp"
 
 #include <algorithm>
 #include <array>
@@ -14,6 +14,8 @@
 #include <string_view>
 #include <tuple>
 #include <vector>
+
+#include <utf8.h>
 
 // codigo para uma funcao assistente no codigo, nao tem relacao com o projeto
 namespace stackoverflow {
