@@ -9,13 +9,13 @@
 #include <map>
 #include <memory>
 #include <sstream>
-#include <stdexcept>
 #include <string>
 #include <string_view>
 #include <tuple>
 #include <vector>
 
 #include <utf8.h>
+
 
 // codigo para uma funcao assistente no codigo, nao tem relacao com o projeto
 namespace stackoverflow {
@@ -40,10 +40,14 @@ reversion_wrapper<T> reverse(T &&iterable) {
 }
 } // namespace stackoverflow
 
-ArvoreSintatica::ArvoreSintatica(std::string::iterator ini, std::string::iterator fim, std::map<char, bool> &mapaVariaveis) {
-	std::string::iterator var;
+bool cp_c32_const(char32_t c, std::string_view constant) {
+	return c == utf8::utf8to32(constant)[0];
+}
+
+ArvoreSintatica::ArvoreSintatica(std::u32string::iterator ini, std::u32string::iterator fim, mapa_vars_t &mapaVariaveis) {
+	std::u32string::iterator var;
 	// simbolos logicos permitidos em ordem de prioridade ('v' eh o ultimo a ser processado etc)
-	std::array<char, 3> oprs {'v', '^', '~'};
+	auto oprs = std::u32string{utf8::utf8to32("⟷→∨∧¬")};
 	// para cada simbolo
 	for (auto c : oprs) {
 		// tentar achar esse simbolo na formula
@@ -55,12 +59,12 @@ ArvoreSintatica::ArvoreSintatica(std::string::iterator ini, std::string::iterato
 			// manda processar tudo a direita como uma formula tambem
 			dir = std::make_unique<ArvoreSintatica>(var + 1, fim, mapaVariaveis);
 			// se o simbolo nao for '~', tudo a esquerda tambem eh processado
-			if (c != '~') {
+			if (!cp_c32_const(c, "¬")) {
 				esq = std::make_unique<ArvoreSintatica>(ini, var, mapaVariaveis);
 			}
 			// so o simbolo for '~', entao a formula precisa ter tamanho 2, e o '~' precisa estar no comeco dela
 			else if (var != ini) {
-				throw std::runtime_error {"formula invalida"};
+				throw InvalidFormulaException {};
 			}
 			// retornar depois de achar um simbolo
 			return;
@@ -68,33 +72,42 @@ ArvoreSintatica::ArvoreSintatica(std::string::iterator ini, std::string::iterato
 	}
 	// se chegou aqui entao nenhum simbolo foi encontrado, entao eh para ser um nome de variavel
 	opr = *ini;
-	// um nome de variavel precisa ter comprimento igual a 1, e ser uma letra que nao seja 'v'
-	if (fim - ini != 1 || !std::isalpha(opr) || (opr == 'v')) {
-		throw std::runtime_error {"formula invalida"};
+	// um nome de variavel precisa ter comprimento igual a 1, e ser uma letra
+	if (fim - ini != 1 || !std::isalpha(opr)) {
+		std::stringstream ss;
+		ss << "O texto < " << utf8::utf32to8(std::u32string {ini, fim}) << " > não é um nome de variável válido\n"
+		   << "Tamanho: " << (fim - ini) << " (precisa ser 1)" << "\nÈ alfanumérico? " << (std::isalpha(opr) ? "sim" : "não") << '\n';
+		throw InvalidFormulaException {ss.str()};
 	}
 	// o valor da variavel se refere a um mapa externo de variaveis
 	valor = &mapaVariaveis[opr];
 }
 // avaliar o resultado da formula baseado no mapa de variaveis externo
 bool ArvoreSintatica::avaliar() const {
-	if (opr == 'v') {
+	if (cp_c32_const(opr, "⟷")) {
+		return esq->avaliar() == dir->avaliar();
+	}
+	if (cp_c32_const(opr, "→")) {
+		return !esq->avaliar() || dir->avaliar();
+	}
+	if (cp_c32_const(opr, "∨")) {
 		return esq->avaliar() || dir->avaliar();
 	}
-	if (opr == '^') {
+	if (cp_c32_const(opr, "∧")) {
 		return esq->avaliar() && dir->avaliar();
 	}
-	if (opr == '~') {
+	if (cp_c32_const(opr, "¬")) {
 		return !dir->avaliar();
 	}
 	// caso nao seja uma operacao logica, eh uma variavel, nesse caso o seu valor eh retornado
 	return *valor;
 }
 
-TabelaVerdade::TabelaVerdade(std::string_view formula) : formula {formula} {
+TabelaVerdade::TabelaVerdade(std::string_view formula) : formula {utf8::utf8to32(formula)} {
 	removerEspacos(); // remover espacos da formula
 	criarTabela();	  // processar formula
 }
-auto TabelaVerdade::getTabela() {
+tabela_t TabelaVerdade::getTabela() {
 	return tabela;
 }
 
@@ -103,28 +116,33 @@ void TabelaVerdade::removerEspacos() {
 }
 void TabelaVerdade::criarTabela() {
 	// mapa para guardar todas as variaveis encontradas
-	std::map<char, bool> mapaVariaveis;
+	mapa_vars_t mapaVariaveis;
 	// criar arvore sintatica que representa a formula
 	const auto arvore = std::make_unique<ArvoreSintatica>(formula.begin(), formula.end(), mapaVariaveis);
+	/*
 	// checar que o numero de variaveis estah dentro das especificacoes
 	if (mapaVariaveis.size() < 1 || 3 < mapaVariaveis.size()) {
 		throw std::runtime_error {"numero de variaveis invalida"};
 	}
+	*/
 	// o tamanho da tabela eh iqual a 2 elevado ao numero de variaveis
 	const auto tamanho = std::pow(2, mapaVariaveis.size());
 	// passar por todas as combinacoes de verdadeiro e falso das variaveis para formar a tabela verdade
 	for (uint64_t i {0}; i < tamanho; i++) {
 		int j {0};
+
 		for (auto &[nome, valor] : stackoverflow::reverse(mapaVariaveis)) {
 			valor = ((i & (1ull << j)) == 0);
 			j++;
 		}
+
 		// adicionar essa combinacao de variaveis e resultado em uma linha da tabela
 		tabela.push_back({mapaVariaveis, arvore->avaliar()});
 	}
+
 }
 
-auto getTabelaFormatada(const tabela_t &tabela, std::string_view formula) {
+std::string getTabelaFormatada(const tabela_t &tabela, std::string_view formula) {
 	const auto [variaves, res] = tabela[0];
 
 	std::stringstream resultado;
@@ -135,7 +153,7 @@ auto getTabelaFormatada(const tabela_t &tabela, std::string_view formula) {
 	separador << "+-" << std::string(formula.length(), '-') << "-+";
 	resultado << separador.str() << '\n';
 	for (auto &[nome, valor] : variaves) {
-		resultado << "| " << nome << " ";
+		resultado << "| " << char(nome) << " ";
 	}
 	resultado << "| " << formula << " |\n";
 	resultado << separador.str() << '\n';

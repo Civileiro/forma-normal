@@ -5,6 +5,7 @@
 #include <string>
 #include <array>
 
+
 class FormaNormal {
   public:
 	FormaNormal() = default;
@@ -14,8 +15,10 @@ class FormaNormal {
 	std::unordered_map<std::string, ImFont*> fonts;
 	std::array<char, 1024> text{};
 	bool inputValid = false;
+	std::string asd;
 
 	void secaoTabela();
 	void secaoInput();
 	void secaoFormas();
+	void processInput();
 };

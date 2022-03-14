@@ -1,11 +1,13 @@
 #include "forma_normal.hpp"
 #include "cambriamath.cpp"
 #include "droidsans.cpp"
+#include "tabela_verdade.hpp"
 
 #include <utf8.h>
 
 #include <string.h>
 #include <string_view>
+#include <iostream>
 
 namespace ImGuiHelper {
 
@@ -41,7 +43,8 @@ void FormaNormal::drawWindowAndProcess() {
 	ImGui::PushFont(fonts["droid54"]);
 	if (ImGui::Begin("Example: Fullscreen window", nullptr, flags)) {
 		if (ImGui::BeginChild("Tabela Verdade", ImVec2 {-800, 0}, true, ImGuiWindowFlags_NoDecoration)) {
-			secaoTabela();
+			if(inputValid)
+				secaoTabela();
 		}
 		ImGui::EndChild();
 		ImGui::SameLine();
@@ -51,7 +54,8 @@ void FormaNormal::drawWindowAndProcess() {
 			}
 			ImGui::EndChild();
 			if (ImGui::BeginChild("Formas Normais", ImVec2 {0, 0}, true, ImGuiWindowFlags_NoDecoration)) {
-				secaoFormas();
+				if(inputValid)
+					secaoFormas();
 			}
 			ImGui::EndChild();
 		}
@@ -60,7 +64,11 @@ void FormaNormal::drawWindowAndProcess() {
 	ImGui::End();
 	ImGui::PopFont();
 }
-void FormaNormal::secaoTabela() {} 
+void FormaNormal::secaoTabela() {
+	ImGui::PushFont(fonts["math36"]);
+	ImGui::Text(asd.data());
+	ImGui::PopFont();
+} 
 
 void FormaNormal::secaoInput() {
 	ImGui::SetCursorPosY(25);
@@ -94,9 +102,22 @@ void FormaNormal::secaoInput() {
 	ImGui::SetCursorPosY(200);
 	ImGui::PushFont(fonts["math36"]);
 	ImGui::PushItemWidth(700);
-	ImGui::InputText("##source", text.data(), text.size());
+	if(ImGui::InputText("##source", text.data(), text.size())) {
+		try {
+			processInput();
+			inputValid = true;
+		} catch(InvalidFormulaException &e) {
+			inputValid = false;
+			std::cout << e.what() << '\n';
+		}
+	}
 	ImGui::PopItemWidth();
 	ImGui::PopFont();
 }
 
 void FormaNormal::secaoFormas() {}
+
+void FormaNormal::processInput() {
+	TabelaVerdade tv{text.data()};
+	asd = getTabelaFormatada(tv.getTabela(), text.data());
+}
