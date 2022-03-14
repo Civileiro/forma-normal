@@ -5,6 +5,8 @@
 #include <string>
 #include <array>
 
+#include "tabela_verdade.hpp"
+
 
 class FormaNormal {
   public:
@@ -15,7 +17,7 @@ class FormaNormal {
 	std::unordered_map<std::string, ImFont*> fonts;
 	std::array<char, 1024> text{};
 	bool inputValid = false;
-	std::string asd;
+	tabela_t tabela;
 
 	void secaoTabela();
 	void secaoInput();

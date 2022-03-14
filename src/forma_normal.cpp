@@ -1,13 +1,12 @@
 #include "forma_normal.hpp"
 #include "cambriamath.cpp"
 #include "droidsans.cpp"
-#include "tabela_verdade.hpp"
 
 #include <utf8.h>
 
+#include <iostream>
 #include <string.h>
 #include <string_view>
-#include <iostream>
 
 namespace ImGuiHelper {
 
@@ -43,8 +42,7 @@ void FormaNormal::drawWindowAndProcess() {
 	ImGui::PushFont(fonts["droid54"]);
 	if (ImGui::Begin("Example: Fullscreen window", nullptr, flags)) {
 		if (ImGui::BeginChild("Tabela Verdade", ImVec2 {-800, 0}, true, ImGuiWindowFlags_NoDecoration)) {
-			if(inputValid)
-				secaoTabela();
+			if (inputValid) secaoTabela();
 		}
 		ImGui::EndChild();
 		ImGui::SameLine();
@@ -54,8 +52,7 @@ void FormaNormal::drawWindowAndProcess() {
 			}
 			ImGui::EndChild();
 			if (ImGui::BeginChild("Formas Normais", ImVec2 {0, 0}, true, ImGuiWindowFlags_NoDecoration)) {
-				if(inputValid)
-					secaoFormas();
+				if (inputValid) secaoFormas();
 			}
 			ImGui::EndChild();
 		}
@@ -66,9 +63,37 @@ void FormaNormal::drawWindowAndProcess() {
 }
 void FormaNormal::secaoTabela() {
 	ImGui::PushFont(fonts["math36"]);
-	ImGui::Text(asd.data());
+	const auto tableWidth = std::get<0>(tabela[0]).size() + 1;
+	if (ImGui::BeginTable("table1", tableWidth, ImGuiTableFlags_Borders)) {
+		for (const auto &[name, state] : std::get<0>(tabela[0])) {
+			ImGui::TableSetupColumn(utf8::utf32to8(std::u32string {name}).data(), ImGuiTableColumnFlags_WidthFixed);
+		}
+		ImGui::TableSetupColumn(text.data(), ImGuiTableColumnFlags_WidthStretch);
+		ImGui::TableHeadersRow();
+		int row = 0;
+		for (const auto &[mapa_vars, result] : tabela) {
+			ImGui::TableNextRow();
+			int column = 0;
+			for (const auto [nome, state] : mapa_vars) {
+				ImGui::TableSetColumnIndex(column);
+				ImGui::Text(state ? "V" : "F", row, column);
+
+				ImU32 cell_bg_color = state ? ImGui::GetColorU32(ImVec4(0.2f, 1.f, 0.3f, 0.65f)) : ImGui::GetColorU32(ImVec4(0.9f, 0.1f, 0.3f, 0.65f));
+				ImGui::TableSetBgColor(ImGuiTableBgTarget_CellBg, cell_bg_color);
+
+				column++;
+			}
+			ImGui::TableSetColumnIndex(column);
+			ImGui::Text(result ? "V" : "F", row, column);
+
+			ImU32 cell_bg_color = result ? ImGui::GetColorU32(ImVec4(0.2f, 1.f, 0.3f, 0.65f)) : ImGui::GetColorU32(ImVec4(0.9f, 0.1f, 0.3f, 0.65f));
+			ImGui::TableSetBgColor(ImGuiTableBgTarget_CellBg, cell_bg_color);
+			row++;
+		}
+		ImGui::EndTable();
+	}
 	ImGui::PopFont();
-} 
+}
 
 void FormaNormal::secaoInput() {
 	ImGui::SetCursorPosY(25);
@@ -102,11 +127,11 @@ void FormaNormal::secaoInput() {
 	ImGui::SetCursorPosY(200);
 	ImGui::PushFont(fonts["math36"]);
 	ImGui::PushItemWidth(700);
-	if(ImGui::InputText("##source", text.data(), text.size())) {
+	if (ImGui::InputText("##source", text.data(), text.size())) {
 		try {
 			processInput();
 			inputValid = true;
-		} catch(InvalidFormulaException &e) {
+		} catch (InvalidFormulaException &e) {
 			inputValid = false;
 			std::cout << e.what() << '\n';
 		}
@@ -118,6 +143,6 @@ void FormaNormal::secaoInput() {
 void FormaNormal::secaoFormas() {}
 
 void FormaNormal::processInput() {
-	TabelaVerdade tv{text.data()};
-	asd = getTabelaFormatada(tv.getTabela(), text.data());
+	TabelaVerdade tv {text.data()};
+	tabela = tv.getTabela();
 }

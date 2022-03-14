@@ -16,7 +16,6 @@
 
 #include <utf8.h>
 
-
 // codigo para uma funcao assistente no codigo, nao tem relacao com o projeto
 namespace stackoverflow {
 template <typename T>
@@ -44,14 +43,24 @@ bool cp_c32_const(char32_t c, std::string_view constant) {
 	return c == utf8::utf8to32(constant)[0];
 }
 
+auto acharForaParenteses(std::u32string::iterator ini, std::u32string::iterator fim, char32_t c) {
+	int parCount = 0;
+	for (auto i = ini; i != fim; i++) {
+		if (*i == '(') parCount++;
+		else if (*i == ')') parCount--;
+		else if (*i == c && parCount == 0) return i;
+	}
+	return fim;
+}
+
 ArvoreSintatica::ArvoreSintatica(std::u32string::iterator ini, std::u32string::iterator fim, mapa_vars_t &mapaVariaveis) {
 	std::u32string::iterator var;
 	// simbolos logicos permitidos em ordem de prioridade ('v' eh o ultimo a ser processado etc)
-	auto oprs = std::u32string{utf8::utf8to32("⟷→∨∧¬")};
+	auto oprs = std::u32string {utf8::utf8to32("⟷→∨∧¬")};
 	// para cada simbolo
 	for (auto c : oprs) {
 		// tentar achar esse simbolo na formula
-		var = std::find(ini, fim, c);
+		var = acharForaParenteses(ini, fim, c);
 		// se achar
 		if (var != fim) {
 			// o simbolo vira a raiz dessa arvore
@@ -70,13 +79,18 @@ ArvoreSintatica::ArvoreSintatica(std::u32string::iterator ini, std::u32string::i
 			return;
 		}
 	}
-	// se chegou aqui entao nenhum simbolo foi encontrado, entao eh para ser um nome de variavel
+	// se chegou aqui entao nenhum simbolo foi encontrado, entao eh para ser um nome de variavel ou tudo parenteses
+	if(*ini == '(' && fim - ini > 2) {
+		*this = ArvoreSintatica{ini + 1, fim - 1, mapaVariaveis};
+		return;
+	}
 	opr = *ini;
 	// um nome de variavel precisa ter comprimento igual a 1, e ser uma letra
 	if (fim - ini != 1 || !std::isalpha(opr)) {
 		std::stringstream ss;
 		ss << "O texto < " << utf8::utf32to8(std::u32string {ini, fim}) << " > não é um nome de variável válido\n"
-		   << "Tamanho: " << (fim - ini) << " (precisa ser 1)" << "\nÈ alfanumérico? " << (std::isalpha(opr) ? "sim" : "não") << '\n';
+		   << "Tamanho: " << (fim - ini) << " (precisa ser 1)"
+		   << "\nÈ alfanumérico? " << (std::isalpha(opr) ? "sim" : "não") << '\n';
 		throw InvalidFormulaException {ss.str()};
 	}
 	// o valor da variavel se refere a um mapa externo de variaveis
@@ -119,12 +133,7 @@ void TabelaVerdade::criarTabela() {
 	mapa_vars_t mapaVariaveis;
 	// criar arvore sintatica que representa a formula
 	const auto arvore = std::make_unique<ArvoreSintatica>(formula.begin(), formula.end(), mapaVariaveis);
-	/*
-	// checar que o numero de variaveis estah dentro das especificacoes
-	if (mapaVariaveis.size() < 1 || 3 < mapaVariaveis.size()) {
-		throw std::runtime_error {"numero de variaveis invalida"};
-	}
-	*/
+
 	// o tamanho da tabela eh iqual a 2 elevado ao numero de variaveis
 	const auto tamanho = std::pow(2, mapaVariaveis.size());
 	// passar por todas as combinacoes de verdadeiro e falso das variaveis para formar a tabela verdade
@@ -139,7 +148,6 @@ void TabelaVerdade::criarTabela() {
 		// adicionar essa combinacao de variaveis e resultado em uma linha da tabela
 		tabela.push_back({mapaVariaveis, arvore->avaliar()});
 	}
-
 }
 
 std::string getTabelaFormatada(const tabela_t &tabela, std::string_view formula) {
