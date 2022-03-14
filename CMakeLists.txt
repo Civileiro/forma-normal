@@ -4,7 +4,7 @@
 #  cmake -g "Visual Studio 14 2015" ..
 
 cmake_minimum_required(VERSION 3.16)
-project(imgui_example_glfw_vulkan C CXX)
+project(calc_normal C CXX)
 
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Debug CACHE STRING "" FORCE)

@@ -494,7 +494,7 @@ int main(int, char**)
 
         fn.drawWindowAndProcess();
 
-        ImGui::ShowDemoWindow();
+        //ImGui::ShowDemoWindow();
 
         // Rendering
         ImGui::Render();
