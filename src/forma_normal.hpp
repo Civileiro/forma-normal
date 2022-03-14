@@ -13,4 +13,9 @@ class FormaNormal {
   private:
 	std::unordered_map<std::string, ImFont*> fonts;
 	std::array<char, 1024> text{};
+	bool inputValid = false;
+
+	void secaoTabela();
+	void secaoInput();
+	void secaoFormas();
 };

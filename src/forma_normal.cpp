@@ -4,8 +4,8 @@
 
 #include <utf8.h>
 
-#include <string_view>
 #include <string.h>
+#include <string_view>
 
 namespace ImGuiHelper {
 
@@ -41,58 +41,17 @@ void FormaNormal::drawWindowAndProcess() {
 	ImGui::PushFont(fonts["droid54"]);
 	if (ImGui::Begin("Example: Fullscreen window", nullptr, flags)) {
 		if (ImGui::BeginChild("Tabela Verdade", ImVec2 {-800, 0}, true, ImGuiWindowFlags_NoDecoration)) {
+			secaoTabela();
 		}
 		ImGui::EndChild();
 		ImGui::SameLine();
 		if (ImGui::BeginChild("Direita", ImVec2 {0, 0}, false, ImGuiWindowFlags_NoDecoration)) {
 			if (ImGui::BeginChild("Input", ImVec2 {0, 300}, true, ImGuiWindowFlags_NoDecoration)) {
-				ImGui::SetCursorPosY(25);
-				ImGuiHelper::TextCentered("Digite a formula a ser calculada");
-
-				std::u32string buttonChars = utf8::utf8to32("∨∧¬→⟷");
-				ImGui::SetCursorPosX((800 - (70 * buttonChars.size())) * 0.5f);
-				ImGui::SetCursorPosY(110);
-
-				ImGui::BeginGroup();
-				ImGui::PushFont(fonts["math54"]);
-				const auto buttonSize = ImVec2 {64, 64};
-				bool first = true;
-				for (auto c : buttonChars) {
-					if(!first) {
-						ImGui::SameLine();
-					}
-					first = false;
-					auto cu8 = utf8::utf32to8(std::u32string {c});
-					if (ImGui::Button(cu8.data(), buttonSize)) {
-						strcat(text.data(), cu8.data());
-					}
-				}
-				/*
-				if (ImGui::Button("∨", buttonSize)) {
-					text += "∨";
-				}
-				ImGui::SameLine();
-				ImGui::Button("∧", buttonSize);
-				ImGui::SameLine();
-				ImGui::Button("¬", buttonSize);
-				ImGui::SameLine();
-				ImGui::Button("→", buttonSize);
-				ImGui::SameLine();
-				ImGui::Button("⟷", buttonSize); */
-
-				ImGui::PopFont();
-				ImGui::EndGroup();
-
-				ImGui::SetCursorPosX(50);
-				ImGui::SetCursorPosY(200);
-				ImGui::PushFont(fonts["math36"]);
-				ImGui::PushItemWidth(700);
-				ImGui::InputText("##source", text.data(), text.size());
-				ImGui::PopItemWidth();
-				ImGui::PopFont();
+				secaoInput();
 			}
 			ImGui::EndChild();
 			if (ImGui::BeginChild("Formas Normais", ImVec2 {0, 0}, true, ImGuiWindowFlags_NoDecoration)) {
+				secaoFormas();
 			}
 			ImGui::EndChild();
 		}
@@ -101,3 +60,43 @@ void FormaNormal::drawWindowAndProcess() {
 	ImGui::End();
 	ImGui::PopFont();
 }
+void FormaNormal::secaoTabela() {} 
+
+void FormaNormal::secaoInput() {
+	ImGui::SetCursorPosY(25);
+	ImGuiHelper::TextCentered("Digite a formula a ser calculada");
+
+	std::u32string buttonChars = utf8::utf8to32("∨∧¬→⟷");
+	ImGui::SetCursorPosX((800 - (70 * buttonChars.size())) * 0.5f);
+	ImGui::SetCursorPosY(110);
+
+	ImGui::BeginGroup();
+	ImGui::PushFont(fonts["math54"]);
+	const auto buttonSize = ImVec2 {64, 64};
+	bool first = true;
+	int inputHead = buttonChars.size();
+	for (auto c : buttonChars) {
+		if (!first) {
+			ImGui::SameLine();
+		}
+		first = false;
+		inputHead--;
+		auto cu8 = utf8::utf32to8(std::u32string {c});
+		if (ImGui::Button(cu8.data(), buttonSize)) {
+			strcat(text.data(), cu8.data());
+			ImGui::SetKeyboardFocusHere(inputHead);
+		}
+	}
+	ImGui::PopFont();
+	ImGui::EndGroup();
+
+	ImGui::SetCursorPosX(50);
+	ImGui::SetCursorPosY(200);
+	ImGui::PushFont(fonts["math36"]);
+	ImGui::PushItemWidth(700);
+	ImGui::InputText("##source", text.data(), text.size());
+	ImGui::PopItemWidth();
+	ImGui::PopFont();
+}
+
+void FormaNormal::secaoFormas() {}
