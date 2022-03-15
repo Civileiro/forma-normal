@@ -20,6 +20,24 @@ void TextCentered(std::string_view text) {
 
 } // namespace ImGuiHelper
 
+int inputCallback(ImGuiInputTextCallbackData *data) {
+	auto myData = reinterpret_cast<FormaNormal *>(data->UserData);
+	myData->setCursorPos(data->CursorPos);
+
+	static std::string oldText;
+	static bool doProcess = false;
+	if(doProcess) {
+		myData->processInput();
+		doProcess = false;
+	}
+	if (oldText != std::string {data->Buf}) {
+		doProcess = true;
+	}
+
+	oldText = std::string {data->Buf};
+	return 0;
+}
+
 void loadDroid(std::unordered_map<std::string, ImFont *> &fonts, ImGuiIO &io, float size) {
 	fonts["droid" + std::to_string(int(size))] = io.Fonts->AddFontFromMemoryCompressedTTF(DroidSans_compressed_data, DroidSans_compressed_size, size);
 }
@@ -116,7 +134,10 @@ void FormaNormal::secaoInput() {
 		inputHead--;
 		auto cu8 = utf8::utf32to8(std::u32string {c});
 		if (ImGui::Button(cu8.data(), buttonSize)) {
-			strcat(text.data(), cu8.data());
+			const auto tam = strlen(text.data());
+			std::copy(text.begin() + cursorPos, text.begin() + tam, text.begin() + cursorPos + cu8.size());
+			std::copy(cu8.begin(), cu8.end(), text.begin() + cursorPos);
+			text[tam + cu8.size()] = '\0';
 			ImGui::SetKeyboardFocusHere(inputHead);
 		}
 	}
@@ -127,22 +148,27 @@ void FormaNormal::secaoInput() {
 	ImGui::SetCursorPosY(200);
 	ImGui::PushFont(fonts["math36"]);
 	ImGui::PushItemWidth(700);
-	if (ImGui::InputText("##source", text.data(), text.size())) {
-		try {
-			processInput();
-			inputValid = true;
-		} catch (InvalidFormulaException &e) {
-			inputValid = false;
-			std::cout << e.what() << '\n';
-		}
+	if (ImGui::InputText("##source", text.data(), text.size(), ImGuiInputTextFlags_CallbackAlways, inputCallback, this)) {
 	}
 	ImGui::PopItemWidth();
 	ImGui::PopFont();
 }
 
-void FormaNormal::secaoFormas() {}
+void FormaNormal::secaoFormas() {
+	ImGui::Text(std::to_string(cursorPos).data());
+}
 
 void FormaNormal::processInput() {
-	TabelaVerdade tv {text.data()};
-	tabela = tv.getTabela();
+	try {
+		TabelaVerdade tv {text.data()};
+		tabela = tv.getTabela();
+		inputValid = true;
+	} catch (InvalidFormulaException &e) {
+		inputValid = false;
+		std::cout << e.what() << '\n';
+	}
+}
+
+void FormaNormal::setCursorPos(int pos) {
+	cursorPos = pos;
 }
