@@ -68,7 +68,13 @@ void AppFN::drawWindowAndProcess() {
 	ImGui::PushFont(fonts["droid54"]);
 	if (ImGui::Begin("Example: Fullscreen window", nullptr, flags)) {
 		if (ImGui::BeginChild("Tabela Verdade", ImVec2 {-800, 0}, true, ImGuiWindowFlags_NoDecoration)) {
-			if (inputValid) secaoTabela();
+			if (!inputValid ) {
+				ImGuiHelper::TextCentered("Input Invalido!");
+			} else if(tv.getTabela().size() > 100) {
+				ImGuiHelper::TextCentered("Tabela Verdade muito grande para mostrar");
+			} else {
+				secaoTabela();
+			}
 		}
 		ImGui::EndChild();
 		ImGui::SameLine();
@@ -78,7 +84,10 @@ void AppFN::drawWindowAndProcess() {
 			}
 			ImGui::EndChild();
 			if (ImGui::BeginChild("Formas Normais", ImVec2 {0, 0}, true, ImGuiWindowFlags_NoDecoration)) {
-				if (inputValid) secaoFormas();
+				if(tv.getTabela().size() > 300) {
+					ImGuiHelper::TextCentered("Muitas variaveis para computar!");
+				}
+				else if (inputValid) secaoFormas();
 			}
 			ImGui::EndChild();
 		}
@@ -169,12 +178,14 @@ void AppFN::secaoInput() {
 void AppFN::secaoFormas() {
 	FormaNormal fn{tv.getTabela()};
 
+	ImGui::SetCursorPosY(ImGui::GetCursorPos().y + 50);
 	ImGui::PushFont(fonts["droid36"]);
 	ImGuiHelper::TextCentered("Forma Normal Conjuntiva:");
 	ImGui::PushFont(fonts["math36"]);
 	ImGuiHelper::TextCentered(FormaNormal::formatClausula(fn.getFNC(), U'∨', U'∧', true));
 	ImGui::PopFont();
 	
+	ImGui::SetCursorPosY(ImGui::GetCursorPos().y + 50);
 	ImGuiHelper::TextCentered("Forma Normal Disjuntiva:");
 	ImGui::PushFont(fonts["math36"]);
 	ImGuiHelper::TextCentered(FormaNormal::formatClausula(fn.getFND(), U'∧', U'∨', false));

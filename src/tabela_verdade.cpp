@@ -168,7 +168,7 @@ std::string FormaNormal::formatClausula(const std::vector<mapa_vars_t> &clausula
 
 		f_first = false;
 
-		ss << char32_t {'('};
+		if(clausula.size() > 1) ss << char32_t {'('};
 
 		bool f_first = true;
 		for (const auto [var, notNot] : clausula) {
@@ -177,10 +177,10 @@ std::string FormaNormal::formatClausula(const std::vector<mapa_vars_t> &clausula
 			if (!notNot) ss << U'¬';
 			ss << var;
 		}
-		ss << char32_t {')'};
+		if(clausula.size() > 1) ss << char32_t {')'};
 	}
 	auto result = ss.str();
-	if (clausulas.size() == 1) result = result.substr(1, result.size() - 2);
+	if (clausulas.size() == 1 && clausulas[0].size() > 1) result = result.substr(1, result.size() - 2);
 	return utf8::utf32to8(result);
 }
 
