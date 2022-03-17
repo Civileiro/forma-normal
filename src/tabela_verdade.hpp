@@ -24,9 +24,11 @@ class FormaNormal {
 	FormaNormal(const tabela_t &tabela) : tabela{tabela} {}
 	std::vector<mapa_vars_t> getFNC() const;
 	std::vector<mapa_vars_t> getFND() const;
-	static std::string formatClausula(const std::vector<mapa_vars_t> &clausulas, const char32_t inner, const char32_t outer);
+	static std::string formatClausula(const std::vector<mapa_vars_t> &clausulas, const char32_t inner, const char32_t outer, bool emptyCase = true);
   private:
 	tabela_t tabela;
+
+	static void simplifyFormula(std::vector<mapa_vars_t> &clausulas);
 	
 };
 

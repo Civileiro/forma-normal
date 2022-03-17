@@ -8,6 +8,7 @@
 #include <iterator>
 #include <map>
 #include <memory>
+#include <numeric>
 #include <sstream>
 #include <string>
 #include <string_view>
@@ -56,49 +57,132 @@ auto acharForaParenteses(std::u32string::iterator ini, std::u32string::iterator 
 }
 std::vector<mapa_vars_t> FormaNormal::getFNC() const {
 	std::vector<mapa_vars_t> clausulas;
-	for(const auto &[mapa_vars, result] : tabela) {
-		if(result == false) {
+	for (const auto &[mapa_vars, result] : tabela) {
+		if (result == false) {
 			auto clausula = mapa_vars;
-			for(auto &[var, state] : clausula) {
+			for (auto &[var, state] : clausula) {
 				state = !state;
 			}
 			clausulas.push_back(clausula);
 		}
 	}
+	simplifyFormula(clausulas);
 	return clausulas;
 }
 std::vector<mapa_vars_t> FormaNormal::getFND() const {
 	std::vector<mapa_vars_t> clausulas;
-	for(const auto &[mapa_vars, result] : tabela) {
-		if(result) {
+	for (const auto &[mapa_vars, result] : tabela) {
+		if (result) {
 			clausulas.push_back(mapa_vars);
 		}
 	}
+	simplifyFormula(clausulas);
 	return clausulas;
 }
-std::string FormaNormal::formatClausula(const std::vector<mapa_vars_t> &clausulas, const char32_t inner, const char32_t outer) {
-	std::basic_stringstream<char32_t> ss;
-	bool f_first = true;
-	for(const auto &clausula : clausulas) {
-		if(!f_first) ss << outer;
-		
-		f_first = false;
-
-		ss << char32_t{'('};
-
-		bool f_first = true;
-		for(const auto [var, notNot] : clausula) {
-			if(!f_first) ss << inner;
-			f_first = false;
-			if(!notNot) ss << U'¬';
-			ss << var;
+template <typename Map>
+bool key_compare(const Map &lhs, const Map &rhs) {
+	return lhs.size() == rhs.size() && std::equal(lhs.begin(), lhs.end(), rhs.begin(), [](auto a, auto b) {
+			   return a.first == b.first;
+		   });
+}
+template <typename Map>
+char32_t keyprime(const Map &lhs, const Map &rhs) {
+	if (lhs.size() >= rhs.size()) return {};
+	int diffs {};
+	char32_t differ = 0;
+	for (const auto [var, state] : lhs) {
+		if (rhs.find(var) == rhs.end()) return {};
+		if (rhs.find(var)->second != state) {
+			diffs++;
+			differ = var;
 		}
-		ss << char32_t{')'};
+		if (diffs > 1) return {};
 	}
-	char32_t c = utf8::utf8to32("∨")[0];
-	return utf8::utf32to8(ss.str());
+	return differ;
+}
+void FormaNormal::simplifyFormula(std::vector<mapa_vars_t> &clausulas) {
+	if (clausulas.size() == 0 || clausulas.size() == 1) return;
+	for (bool change = true; change;) {
+		change = false;
+		for (int i = 0; i < clausulas.size() - 1; i++) {
+			for (int j = i + 1; j < clausulas.size(); j++) {
+				auto c1i = i, c2i = j;
+				if (clausulas[i].size() > clausulas[j].size()) {
+					std::swap(c1i, c2i);
+				}
+				auto &c1 = clausulas[c1i];
+				auto &c2 = clausulas[c2i];
+				// test if theres only 1 negated var diff
+				if (key_compare(c1, c2)) {
+					int diffs = 0;
+					char32_t differ;
+					for (const auto &[var, state] : c1) {
+						if (state != c2[var]) {
+							diffs++;
+							if (diffs > 1) break;
+							differ = var;
+						}
+					}
+					if (diffs == 1) {
+						c1.erase(differ);
+						clausulas.erase(clausulas.begin() + c2i);
+						change = true;
+						goto exit_loops;
+					}
+				}
+				if (const auto differ = keyprime(c1, c2); differ != char32_t {}) {
+					c2.erase(differ);
+					change = true;
+					goto exit_loops;
+				}
+
+				if (c1.size() == 1) {
+					const auto var = c1.begin()->first;
+					if (c2.find(var) != c2.end() && c2.find(var)->second == c1.begin()->second) {
+						// std::cout << formatClausula({c1, c2}, ',', ':') << '\n';
+						clausulas.erase(clausulas.begin() + c2i);
+						change = true;
+						goto exit_loops;
+					}
+				}
+				if (c1 == c2) {
+					clausulas.erase(clausulas.begin() + c2i);
+					change = true;
+					goto exit_loops;
+				}
+			}
+		}
+	exit_loops:;
+	}
+	if (clausulas[0].size() == 0) clausulas[0][0] = true;
+	std::sort(clausulas.begin(), clausulas.end());
 }
 
+std::string FormaNormal::formatClausula(const std::vector<mapa_vars_t> &clausulas, const char32_t inner, const char32_t outer, bool emptyCase) {
+	if (clausulas.size() == 0) return emptyCase ? "Tautologia" : "Contradição";
+	if (clausulas[0].find(0) != clausulas[0].end()) return emptyCase ? "Contradição" : "Tautologia";
+	std::basic_stringstream<char32_t> ss;
+	bool f_first = true;
+	for (const auto &clausula : clausulas) {
+		if (!f_first) ss << outer;
+
+		f_first = false;
+
+		ss << char32_t {'('};
+
+		bool f_first = true;
+		for (const auto [var, notNot] : clausula) {
+			if (!f_first) ss << inner;
+			f_first = false;
+			if (!notNot) ss << U'¬';
+			ss << var;
+		}
+		ss << char32_t {')'};
+	}
+	auto result = ss.str();
+	if (clausulas.size() == 1) result = result.substr(1, result.size() - 2);
+	return utf8::utf32to8(result);
+}
 
 ArvoreSintatica::ArvoreSintatica(std::u32string::iterator ini, std::u32string::iterator fim, mapa_vars_t &mapaVariaveis) {
 	std::u32string::iterator var;

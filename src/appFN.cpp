@@ -14,7 +14,7 @@ void TextCentered(std::string_view text) {
 	auto windowWidth = ImGui::GetWindowSize().x;
 	auto textWidth = ImGui::CalcTextSize(text.data()).x;
 
-	ImGui::SetCursorPosX((windowWidth - textWidth) * 0.5f);
+	if(textWidth < 800) ImGui::SetCursorPosX((windowWidth - textWidth) * 0.5f);
 	ImGui::TextWrapped(text.data());
 }
 
@@ -23,7 +23,7 @@ void TextCentered(std::string_view text) {
 int inputCallback(ImGuiInputTextCallbackData *data) {
 	auto myData = reinterpret_cast<AppFN *>(data->UserData);
 	myData->setCursorPos(data->CursorPos);
-
+	data->CursorPos += myData->addCursor();
 	static std::string oldText;
 	static bool doProcess = false;
 	if(doProcess) {
@@ -35,6 +35,14 @@ int inputCallback(ImGuiInputTextCallbackData *data) {
 	}
 
 	oldText = std::string {data->Buf};
+	return 0;
+}
+
+int AppFN::addCursor() {
+	if(hasToAdd) {
+		hasToAdd = false;
+		return amountToAdd;
+	}
 	return 0;
 }
 
@@ -140,6 +148,9 @@ void AppFN::secaoInput() {
 			std::copy(cu8.begin(), cu8.end(), text.begin() + cursorPos);
 			text[tam + cu8.size()] = '\0';
 			ImGui::SetKeyboardFocusHere(inputHead);
+			
+			amountToAdd = cu8.size();
+			hasToAdd = true;
 		}
 	}
 	ImGui::PopFont();
@@ -161,12 +172,12 @@ void AppFN::secaoFormas() {
 	ImGui::PushFont(fonts["droid36"]);
 	ImGuiHelper::TextCentered("Forma Normal Conjuntiva:");
 	ImGui::PushFont(fonts["math36"]);
-	ImGuiHelper::TextCentered(FormaNormal::formatClausula(fn.getFNC(), U'∨', U'∧'));
+	ImGuiHelper::TextCentered(FormaNormal::formatClausula(fn.getFNC(), U'∨', U'∧', true));
 	ImGui::PopFont();
 	
 	ImGuiHelper::TextCentered("Forma Normal Disjuntiva:");
 	ImGui::PushFont(fonts["math36"]);
-	ImGuiHelper::TextCentered(FormaNormal::formatClausula(fn.getFND(), U'∧', U'∨'));
+	ImGuiHelper::TextCentered(FormaNormal::formatClausula(fn.getFND(), U'∧', U'∨', false));
 	ImGui::PopFont();
 	ImGui::PopFont();
 }
