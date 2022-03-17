@@ -16,6 +16,8 @@
 
 #include <utf8.h>
 
+#include <iostream>
+
 // codigo para uma funcao assistente no codigo, nao tem relacao com o projeto
 namespace stackoverflow {
 template <typename T>
@@ -39,8 +41,8 @@ reversion_wrapper<T> reverse(T &&iterable) {
 }
 } // namespace stackoverflow
 
-bool cp_c32_const(char32_t c, std::string_view constant) {
-	return c == utf8::utf8to32(constant)[0];
+std::string c32_to_u8(char32_t c) {
+	return utf8::utf32to8(std::u32string {c});
 }
 
 auto acharForaParenteses(std::u32string::iterator ini, std::u32string::iterator fim, char32_t c) {
@@ -52,11 +54,56 @@ auto acharForaParenteses(std::u32string::iterator ini, std::u32string::iterator 
 	}
 	return fim;
 }
+std::vector<mapa_vars_t> FormaNormal::getFNC() const {
+	std::vector<mapa_vars_t> clausulas;
+	for(const auto &[mapa_vars, result] : tabela) {
+		if(result == false) {
+			auto clausula = mapa_vars;
+			for(auto &[var, state] : clausula) {
+				state = !state;
+			}
+			clausulas.push_back(clausula);
+		}
+	}
+	return clausulas;
+}
+std::vector<mapa_vars_t> FormaNormal::getFND() const {
+	std::vector<mapa_vars_t> clausulas;
+	for(const auto &[mapa_vars, result] : tabela) {
+		if(result) {
+			clausulas.push_back(mapa_vars);
+		}
+	}
+	return clausulas;
+}
+std::string FormaNormal::formatClausula(const std::vector<mapa_vars_t> &clausulas, const char32_t inner, const char32_t outer) {
+	std::basic_stringstream<char32_t> ss;
+	bool f_first = true;
+	for(const auto &clausula : clausulas) {
+		if(!f_first) ss << outer;
+		
+		f_first = false;
+
+		ss << char32_t{'('};
+
+		bool f_first = true;
+		for(const auto [var, notNot] : clausula) {
+			if(!f_first) ss << inner;
+			f_first = false;
+			if(!notNot) ss << U'¬';
+			ss << var;
+		}
+		ss << char32_t{')'};
+	}
+	char32_t c = utf8::utf8to32("∨")[0];
+	return utf8::utf32to8(ss.str());
+}
+
 
 ArvoreSintatica::ArvoreSintatica(std::u32string::iterator ini, std::u32string::iterator fim, mapa_vars_t &mapaVariaveis) {
 	std::u32string::iterator var;
 	// simbolos logicos permitidos em ordem de prioridade ('v' eh o ultimo a ser processado etc)
-	auto oprs = std::u32string {utf8::utf8to32("⟷→∨∧¬")};
+	auto oprs = utf8::utf8to32("⟷→∨∧¬");
 	// para cada simbolo
 	for (auto c : oprs) {
 		// tentar achar esse simbolo na formula
@@ -68,7 +115,8 @@ ArvoreSintatica::ArvoreSintatica(std::u32string::iterator ini, std::u32string::i
 			// manda processar tudo a direita como uma formula tambem
 			dir = std::make_unique<ArvoreSintatica>(var + 1, fim, mapaVariaveis);
 			// se o simbolo nao for '~', tudo a esquerda tambem eh processado
-			if (!cp_c32_const(c, "¬")) {
+			if (c != U'¬') {
+				// std::cout << int{c} << " nao eh igual ah " << int{symbols::sNot} << '\n';
 				esq = std::make_unique<ArvoreSintatica>(ini, var, mapaVariaveis);
 			}
 			// so o simbolo for '~', entao a formula precisa ter tamanho 2, e o '~' precisa estar no comeco dela
@@ -80,8 +128,8 @@ ArvoreSintatica::ArvoreSintatica(std::u32string::iterator ini, std::u32string::i
 		}
 	}
 	// se chegou aqui entao nenhum simbolo foi encontrado, entao eh para ser um nome de variavel ou tudo parenteses
-	if(*ini == '(' && fim - ini > 2) {
-		*this = ArvoreSintatica{ini + 1, fim - 1, mapaVariaveis};
+	if (*ini == '(' && fim - ini > 2) {
+		*this = ArvoreSintatica {ini + 1, fim - 1, mapaVariaveis};
 		return;
 	}
 	opr = *ini;
@@ -98,19 +146,20 @@ ArvoreSintatica::ArvoreSintatica(std::u32string::iterator ini, std::u32string::i
 }
 // avaliar o resultado da formula baseado no mapa de variaveis externo
 bool ArvoreSintatica::avaliar() const {
-	if (cp_c32_const(opr, "⟷")) {
+
+	if (opr == U'⟷') {
 		return esq->avaliar() == dir->avaliar();
 	}
-	if (cp_c32_const(opr, "→")) {
+	if (opr == U'→') {
 		return !esq->avaliar() || dir->avaliar();
 	}
-	if (cp_c32_const(opr, "∨")) {
+	if (opr == U'∨') {
 		return esq->avaliar() || dir->avaliar();
 	}
-	if (cp_c32_const(opr, "∧")) {
+	if (opr == U'∧') {
 		return esq->avaliar() && dir->avaliar();
 	}
-	if (cp_c32_const(opr, "¬")) {
+	if (opr == U'¬') {
 		return !dir->avaliar();
 	}
 	// caso nao seja uma operacao logica, eh uma variavel, nesse caso o seu valor eh retornado
@@ -150,7 +199,7 @@ void TabelaVerdade::criarTabela() {
 	}
 }
 
-std::string getTabelaFormatada(const tabela_t &tabela, std::string_view formula) {
+std::string TabelaVerdade::getTabelaFormatada(std::string_view formula) const {
 	const auto [variaves, res] = tabela[0];
 
 	std::stringstream resultado;

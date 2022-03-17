@@ -8,9 +8,9 @@
 #include "tabela_verdade.hpp"
 
 
-class FormaNormal {
+class AppFN {
   public:
-	FormaNormal() = default;
+	AppFN() = default;
 	void drawWindowAndProcess();
 	void loadFonts(ImGuiIO &io);
 	void processInput();
@@ -19,7 +19,7 @@ class FormaNormal {
 	std::unordered_map<std::string, ImFont*> fonts;
 	std::array<char, 1024> text{};
 	bool inputValid = false;
-	tabela_t tabela;
+	TabelaVerdade tv{};
 	int cursorPos;
 
 	void secaoTabela();

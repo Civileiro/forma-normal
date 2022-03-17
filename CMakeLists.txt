@@ -74,4 +74,4 @@ add_executable(calc_normal ${sources} ${IMGUI_DIR}/backends/imgui_impl_glfw.cpp 
 target_link_libraries(calc_normal ${LIBRARIES})
 target_compile_definitions(calc_normal PUBLIC -DImTextureID=ImU64)
 
-target_compile_features(calc_normal PUBLIC cxx_std_17)
+target_compile_features(calc_normal PUBLIC cxx_std_20)

@@ -1,4 +1,4 @@
-#include "forma_normal.hpp"
+#include "appFN.hpp"
 #include "cambriamath.cpp"
 #include "droidsans.cpp"
 
@@ -15,13 +15,13 @@ void TextCentered(std::string_view text) {
 	auto textWidth = ImGui::CalcTextSize(text.data()).x;
 
 	ImGui::SetCursorPosX((windowWidth - textWidth) * 0.5f);
-	ImGui::Text(text.data());
+	ImGui::TextWrapped(text.data());
 }
 
 } // namespace ImGuiHelper
 
 int inputCallback(ImGuiInputTextCallbackData *data) {
-	auto myData = reinterpret_cast<FormaNormal *>(data->UserData);
+	auto myData = reinterpret_cast<AppFN *>(data->UserData);
 	myData->setCursorPos(data->CursorPos);
 
 	static std::string oldText;
@@ -42,7 +42,7 @@ void loadDroid(std::unordered_map<std::string, ImFont *> &fonts, ImGuiIO &io, fl
 	fonts["droid" + std::to_string(int(size))] = io.Fonts->AddFontFromMemoryCompressedTTF(DroidSans_compressed_data, DroidSans_compressed_size, size);
 }
 
-void FormaNormal::loadFonts(ImGuiIO &io) {
+void AppFN::loadFonts(ImGuiIO &io) {
 	loadDroid(fonts, io, 20.f);
 	loadDroid(fonts, io, 36.f);
 	loadDroid(fonts, io, 54.f);
@@ -51,7 +51,7 @@ void FormaNormal::loadFonts(ImGuiIO &io) {
 	fonts["math36"] = io.Fonts->AddFontFromMemoryCompressedTTF(CambriaMath_compressed_data, CambriaMath_compressed_size, 36.f, nullptr, range);
 }
 
-void FormaNormal::drawWindowAndProcess() {
+void AppFN::drawWindowAndProcess() {
 	static ImGuiWindowFlags flags = ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoDecoration;
 
 	const ImGuiViewport *viewport = ImGui::GetMainViewport();
@@ -79,8 +79,9 @@ void FormaNormal::drawWindowAndProcess() {
 	ImGui::End();
 	ImGui::PopFont();
 }
-void FormaNormal::secaoTabela() {
+void AppFN::secaoTabela() {
 	ImGui::PushFont(fonts["math36"]);
+	const auto tabela = tv.getTabela();
 	const auto tableWidth = std::get<0>(tabela[0]).size() + 1;
 	if (ImGui::BeginTable("table1", tableWidth, ImGuiTableFlags_Borders)) {
 		for (const auto &[name, state] : std::get<0>(tabela[0])) {
@@ -113,7 +114,7 @@ void FormaNormal::secaoTabela() {
 	ImGui::PopFont();
 }
 
-void FormaNormal::secaoInput() {
+void AppFN::secaoInput() {
 	ImGui::SetCursorPosY(25);
 	ImGuiHelper::TextCentered("Digite a formula a ser calculada");
 
@@ -154,14 +155,25 @@ void FormaNormal::secaoInput() {
 	ImGui::PopFont();
 }
 
-void FormaNormal::secaoFormas() {
-	ImGui::Text(std::to_string(cursorPos).data());
+void AppFN::secaoFormas() {
+	FormaNormal fn{tv.getTabela()};
+
+	ImGui::PushFont(fonts["droid36"]);
+	ImGuiHelper::TextCentered("Forma Normal Conjuntiva:");
+	ImGui::PushFont(fonts["math36"]);
+	ImGuiHelper::TextCentered(FormaNormal::formatClausula(fn.getFNC(), U'∨', U'∧'));
+	ImGui::PopFont();
+	
+	ImGuiHelper::TextCentered("Forma Normal Disjuntiva:");
+	ImGui::PushFont(fonts["math36"]);
+	ImGuiHelper::TextCentered(FormaNormal::formatClausula(fn.getFND(), U'∧', U'∨'));
+	ImGui::PopFont();
+	ImGui::PopFont();
 }
 
-void FormaNormal::processInput() {
+void AppFN::processInput() {
 	try {
-		TabelaVerdade tv {text.data()};
-		tabela = tv.getTabela();
+		tv = TabelaVerdade{text.data()};
 		inputValid = true;
 	} catch (InvalidFormulaException &e) {
 		inputValid = false;
@@ -169,6 +181,6 @@ void FormaNormal::processInput() {
 	}
 }
 
-void FormaNormal::setCursorPos(int pos) {
+void AppFN::setCursorPos(int pos) {
 	cursorPos = pos;
 }
