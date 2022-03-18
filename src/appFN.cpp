@@ -84,7 +84,7 @@ void AppFN::drawWindowAndProcess() {
 			}
 			ImGui::EndChild();
 			if (ImGui::BeginChild("Formas Normais", ImVec2 {0, 0}, true, ImGuiWindowFlags_NoDecoration)) {
-				if(tv.getTabela().size() > 300) {
+				if(tv.getTabela().size() > 600) {
 					ImGuiHelper::TextCentered("Muitas variaveis para computar!");
 				}
 				else if (inputValid) secaoFormas();
