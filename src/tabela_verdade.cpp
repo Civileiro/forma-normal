@@ -55,7 +55,7 @@ auto acharForaParenteses(std::u32string::iterator ini, std::u32string::iterator 
 	}
 	return fim;
 }
-std::vector<mapa_vars_t> FormaNormal::getFNC() const {
+std::vector<mapa_vars_t> FormaNormal::getFNCunop() const {
 	std::vector<mapa_vars_t> clausulas;
 	for (const auto &[mapa_vars, result] : tabela) {
 		if (result == false) {
@@ -66,19 +66,20 @@ std::vector<mapa_vars_t> FormaNormal::getFNC() const {
 			clausulas.push_back(clausula);
 		}
 	}
-	simplifyFormula(clausulas);
+	// simplifyFormula(clausulas);
 	return clausulas;
 }
-std::vector<mapa_vars_t> FormaNormal::getFND() const {
+std::vector<mapa_vars_t> FormaNormal::getFNDunop() const {
 	std::vector<mapa_vars_t> clausulas;
 	for (const auto &[mapa_vars, result] : tabela) {
 		if (result) {
 			clausulas.push_back(mapa_vars);
 		}
 	}
-	simplifyFormula(clausulas);
+	// simplifyFormula(clausulas);
 	return clausulas;
 }
+/*
 template <typename Map>
 bool key_compare(const Map &lhs, const Map &rhs) {
 	return lhs.size() == rhs.size() && std::equal(lhs.begin(), lhs.end(), rhs.begin(), [](auto a, auto b) {
@@ -100,6 +101,17 @@ char32_t keyprime(const Map &lhs, const Map &rhs) {
 	}
 	return differ;
 }
+template <typename Map>
+bool keysubset(const Map &lhs, const Map &rhs) {
+	if (lhs.size() > rhs.size()) return false;
+	for (const auto [var, state] : lhs) {
+		const auto itFound = rhs.find(var);
+		if (itFound == rhs.end()) return false;
+		if (itFound->second != state) return false;
+	}
+	return true;
+}
+
 void FormaNormal::simplifyFormula(std::vector<mapa_vars_t> &clausulas) {
 	if (clausulas.size() == 0 || clausulas.size() == 1) return;
 	for (bool change = true; change;) {
@@ -136,14 +148,19 @@ void FormaNormal::simplifyFormula(std::vector<mapa_vars_t> &clausulas) {
 					goto exit_loops;
 				}
 
-				if (c1.size() == 1) {
-					const auto var = c1.begin()->first;
-					if (c2.find(var) != c2.end() && c2.find(var)->second == c1.begin()->second) {
-						// std::cout << formatClausula({c1, c2}, ',', ':') << '\n';
-						clausulas.erase(clausulas.begin() + c2i);
-						change = true;
-						goto exit_loops;
-					}
+				// if (c1.size() == 1) {
+				// 	const auto var = c1.begin()->first;
+				// 	if (c2.find(var) != c2.end() && c2.find(var)->second == c1.begin()->second) {
+				// 		// std::cout << formatClausula({c1, c2}, ',', ':') << '\n';
+				// 		clausulas.erase(clausulas.begin() + c2i);
+				// 		change = true;
+				// 		goto exit_loops;
+				// 	}
+				// }
+				if (keysubset(c1, c2)) {
+					clausulas.erase(clausulas.begin() + c2i);
+					change = true;
+					goto exit_loops;
 				}
 				if (c1 == c2) {
 					clausulas.erase(clausulas.begin() + c2i);
@@ -156,11 +173,181 @@ void FormaNormal::simplifyFormula(std::vector<mapa_vars_t> &clausulas) {
 	}
 	if (clausulas[0].size() == 0) clausulas[0][0] = true;
 	std::sort(clausulas.begin(), clausulas.end());
+}*/
+template <typename Map>
+bool keysubset(const Map &lhs, const Map &rhs) {
+	if (lhs.size() > rhs.size()) return false;
+	for (const auto [var, state] : lhs) {
+		const auto itFound = rhs.find(var);
+		if (itFound == rhs.end()) return false;
+		if (itFound->second != state) return false;
+	}
+	return true;
 }
+struct TabelaLine {
+	uint64_t bitState;
+	bool hasCircle;
+};
+struct TabelaBitState {
+	mapa_vars_t vars;
+	uint64_t toBitState(const mapa_vars_t &mapa) const {
+		int i = 0;
+		uint64_t result = 0;
+		for (const auto [var, state] : mapa) {
+			result |= ((1ull << std::distance(vars.begin(), vars.find(var))) << (state ? 0 : 32));
+		}
+		return result;
+	}
+	uint64_t toBitState(const std::vector<std::pair<char32_t, bool>> &mapa) const {
+		int i = 0;
+		uint64_t result = 0;
+		for (const auto [var, state] : mapa) {
+			result |= ((1ull << std::distance(vars.begin(), vars.find(var))) << (state ? 0 : 32));
+		}
+		return result;
+	}
+	mapa_vars_t fromBitState(uint64_t bits) const {
+		uint64_t i = 1;
+		mapa_vars_t mapa;
+		for (const auto var : vars) {
+			if (bits & i) mapa[var.first] = true;
+			i <<= 1;
+		}
+		i = 1;
+		i <<= 32;
+		for (const auto var : vars) {
+			if (bits & i) mapa[var.first] = false;
+			i <<= 1;
+		}
+		return mapa;
+	}
+	static bool bitStateIncludes(const uint64_t checker, const uint64_t checked) {
+		const auto res = (checker & checked) == checker;
+		// std::cout << "checking " << checker << " with " << checked << "  " << res << '\n';
+		return (checker & checked) == checker;
+	}
+};
+std::vector<mapa_vars_t> FormaNormal::getKarnaugh(bool isFNC) const {
+	mapa_vars_t m;
+	m[0] = true;
+	const auto tautologia = m;
+	m[0] = false;
+	const auto contradicao = m;
 
-std::string FormaNormal::formatClausula(const std::vector<mapa_vars_t> &clausulas, const char32_t inner, const char32_t outer, bool emptyCase) {
-	if (clausulas.size() == 0) return emptyCase ? "Tautologia" : "Contradição";
-	if (clausulas[0].find(0) != clausulas[0].end()) return emptyCase ? "Contradição" : "Tautologia";
+	std::vector<std::pair<char32_t, bool>> vars;
+	std::vector<TabelaLine> results;
+	const TabelaBitState tbs {tabela[0].first};
+	for (const auto [var, state] : tabela[0].first) {
+		vars.push_back({var, false});
+	}
+	const auto tabSize = std::pow(2, vars.size());
+	for (const auto &[mapa, result] : tabela) {
+		if (result ^ isFNC) results.push_back({tbs.toBitState(mapa), false});
+	}
+	/*
+	std::cout << "eh FNC? " << isFNC << '\n';
+	for (const auto line : results) {
+		std::cout << "b: " << line.bitState << '\n';
+	}*/
+	// std::cout << "tam results: " << results.size() << '\n';
+	// std::cout << "tam vars: " << vars.size() << '\n';
+	// std::cout << "tam tam: " << tabSize << '\n';
+
+	if (results.size() == 0 && isFNC || results.size() == tabSize && !isFNC) return {tautologia};
+	if (results.size() == 0 && !isFNC || results.size() == tabSize && isFNC) return {contradicao};
+
+	std::vector<std::vector<std::pair<char32_t, bool>>> allVarCombinations;
+	allVarCombinations.reserve(tabSize);
+	// std::cout << "tam allvars: " << allVarCombinations.size() << '\n';
+	bool first = true;
+	for (uint64_t i {0}; i < tabSize; i++) {
+		if (first) {
+			first = false;
+			continue;
+		}
+		int j {0};
+		std::vector<std::pair<char32_t, bool>> varComb;
+		varComb.reserve(vars.size());
+		for (const auto [nome, valor] : vars) {
+			if ((i & (1ull << j)) != 0) {
+				// std::cout << "i j: " << i << "  " << j << '\n';
+				varComb.push_back(vars[j]);
+			}
+			j++;
+		}
+		allVarCombinations.push_back(std::move(varComb));
+	}
+	// std::cout << "tam allvars: " << allVarCombinations.size() << '\n';
+	std::sort(allVarCombinations.begin(), allVarCombinations.end(), [](auto lhs, auto rhs) {
+		return rhs.size() > lhs.size();
+	});
+	std::vector<uint64_t> winnerBitStates;
+	for (auto &comb : allVarCombinations) {
+		const auto tamanho = std::pow(2, comb.size());
+		std::vector<uint64_t> allBitStates;
+		allBitStates.reserve(tamanho);
+		for (uint64_t i {0}; i < tamanho; i++) {
+			int j {0};
+			for (auto &[nome, valor] : comb) {
+				valor = ((i & (1ull << j)) == 0);
+				j++;
+			}
+			const auto bitState = tbs.toBitState(comb);
+			/*bool found = false;
+			for (const auto winner : winnerBitStates) {
+				if (TabelaBitState::bitStateIncludes(winner, bitState)) {
+					found = true;
+					break;
+				}
+			} 
+			if (!found)*/ {
+				allBitStates.push_back(bitState);
+				// std::cout << "a bitstate found: " << bitState << '\n';
+			}
+		}
+		// std::cout << "all bits size: " << allBitStates.size() << '\n';
+		for (const auto bitState : allBitStates) {
+			bool hasUncircled = false;
+
+			int count = 0;
+			for (const auto line : results) {
+				if (TabelaBitState::bitStateIncludes(bitState, line.bitState)) {
+					hasUncircled |= !line.hasCircle;
+					count++;
+				} else {
+					//success = false;
+					// break;
+				}
+			}
+			// std::cout << "tabsize: " << tabSize << "\ntamanho: " << tamanho << "\ncount: " << count << '\n';
+
+			if (hasUncircled && count == tabSize / tamanho) {
+				// std::cout << "winner: " << bitState << '\n';
+				winnerBitStates.push_back(bitState);
+				for (auto &line : results) {
+					if (TabelaBitState::bitStateIncludes(bitState, line.bitState)) {
+						// std::cout << "cleaning\n";
+						line.hasCircle = true;
+					}
+				}
+			}
+		}
+	}
+	std::vector<mapa_vars_t> result;
+	result.reserve(winnerBitStates.size());
+	for (const auto bitState : winnerBitStates) {
+		auto clausula = tbs.fromBitState(bitState);
+		for (auto &[var, state] : clausula) state = state ^ isFNC;
+		result.push_back(clausula);
+	}
+	std::sort(result.begin(), result.end());
+	// std::cout << "result size: " << result.size() << '\n';
+	// std::cout << "winners size: " << winnerBitStates.size() << '\n';
+	return result;
+}
+std::string FormaNormal::formatClausula(const std::vector<mapa_vars_t> &clausulas, const char32_t inner, const char32_t outer) {
+	if (clausulas.size() == 0) return "error";
+	if (const auto homoFound = clausulas[0].find(0); homoFound != clausulas[0].end()) return homoFound->second ? "Tautologia" : "Contradição";
 	std::basic_stringstream<char32_t> ss;
 	bool f_first = true;
 	for (const auto &clausula : clausulas) {
@@ -168,7 +355,7 @@ std::string FormaNormal::formatClausula(const std::vector<mapa_vars_t> &clausula
 
 		f_first = false;
 
-		if(clausula.size() > 1) ss << char32_t {'('};
+		if (clausula.size() > 1) ss << char32_t {'('};
 
 		bool f_first = true;
 		for (const auto [var, notNot] : clausula) {
@@ -177,7 +364,7 @@ std::string FormaNormal::formatClausula(const std::vector<mapa_vars_t> &clausula
 			if (!notNot) ss << U'¬';
 			ss << var;
 		}
-		if(clausula.size() > 1) ss << char32_t {')'};
+		if (clausula.size() > 1) ss << char32_t {')'};
 	}
 	auto result = ss.str();
 	if (clausulas.size() == 1 && clausulas[0].size() > 1) result = result.substr(1, result.size() - 2);

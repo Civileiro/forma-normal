@@ -99,9 +99,9 @@ void AppFN::drawWindowAndProcess() {
 void AppFN::secaoTabela() {
 	ImGui::PushFont(fonts["math36"]);
 	const auto tabela = tv.getTabela();
-	const auto tableWidth = std::get<0>(tabela[0]).size() + 1;
+	const auto tableWidth = tabela[0].first.size() + 1;
 	if (ImGui::BeginTable("table1", tableWidth, ImGuiTableFlags_Borders)) {
-		for (const auto &[name, state] : std::get<0>(tabela[0])) {
+		for (const auto &[name, state] : tabela[0].first) {
 			ImGui::TableSetupColumn(utf8::utf32to8(std::u32string {name}).data(), ImGuiTableColumnFlags_WidthFixed);
 		}
 		ImGui::TableSetupColumn(text.data(), ImGuiTableColumnFlags_WidthStretch);
@@ -176,19 +176,18 @@ void AppFN::secaoInput() {
 }
 
 void AppFN::secaoFormas() {
-	FormaNormal fn{tv.getTabela()};
 
 	ImGui::SetCursorPosY(ImGui::GetCursorPos().y + 50);
 	ImGui::PushFont(fonts["droid36"]);
 	ImGuiHelper::TextCentered("Forma Normal Conjuntiva:");
 	ImGui::PushFont(fonts["math36"]);
-	ImGuiHelper::TextCentered(FormaNormal::formatClausula(fn.getFNC(), U'∨', U'∧', true));
+	ImGuiHelper::TextCentered(FormaNormal::formatClausula(fn.getFNC(), U'∨', U'∧'));
 	ImGui::PopFont();
 	
 	ImGui::SetCursorPosY(ImGui::GetCursorPos().y + 50);
 	ImGuiHelper::TextCentered("Forma Normal Disjuntiva:");
 	ImGui::PushFont(fonts["math36"]);
-	ImGuiHelper::TextCentered(FormaNormal::formatClausula(fn.getFND(), U'∧', U'∨', false));
+	ImGuiHelper::TextCentered(FormaNormal::formatClausula(fn.getFND(), U'∧', U'∨'));
 	ImGui::PopFont();
 	ImGui::PopFont();
 }
@@ -196,10 +195,11 @@ void AppFN::secaoFormas() {
 void AppFN::processInput() {
 	try {
 		tv = TabelaVerdade{text.data()};
+		fn = FormaNormal{tv.getTabela()};
 		inputValid = true;
 	} catch (InvalidFormulaException &e) {
 		inputValid = false;
-		std::cout << e.what() << '\n';
+		//std::cout << e.what() << '\n';
 	}
 }
 

@@ -21,6 +21,7 @@ class AppFN {
 	std::array<char, 1024> text{};
 	bool inputValid = false;
 	TabelaVerdade tv{};
+	FormaNormal fn{};
 	int cursorPos;
 	int amountToAdd;
 	int hasToAdd = false;
