@@ -71,7 +71,7 @@ void AppFN::drawWindowAndProcess() {
 		if (ImGui::BeginChild("Tabela Verdade", ImVec2 {-800, 0}, true, ImGuiWindowFlags_NoDecoration)) {
 			if (!inputValid ) {
 				ImGuiHelper::TextCentered("Input Invalido!");
-			} else if(tv.getTabela().size() > 100) {
+			} else if(tv.getTabela().size() > 1200) {
 				ImGuiHelper::TextCentered("Tabela Verdade muito grande para mostrar");
 			} else {
 				secaoTabela();
@@ -101,7 +101,7 @@ void AppFN::secaoTabela() {
 	ImGui::PushFont(fonts["math36"]);
 	const auto tabela = tv.getTabela();
 	const auto tableWidth = tabela[0].first.size() + 1;
-	if (ImGui::BeginTable("table1", tableWidth, ImGuiTableFlags_Borders)) {
+	if (ImGui::BeginTable("table1", tableWidth, ImGuiTableFlags_Borders | ImGuiTableFlags_ScrollY)) {
 		for (const auto &[name, state] : tabela[0].first) {
 			ImGui::TableSetupColumn(utf8::utf32to8(std::u32string {name}).data(), ImGuiTableColumnFlags_WidthFixed);
 		}
@@ -196,7 +196,7 @@ void AppFN::secaoFormas() {
 void AppFN::processInput() {
 	try {
 		tv = TabelaVerdade{text.data()};
-		if(tv.getTabela().size() <= std::pow(2, 12)) {
+		if(tv.getTabela().size() <= std::pow(2, 15)) {
 			fn = FormaNormal{tv.getTabela()};
 			tooBig = false;
 		} else {

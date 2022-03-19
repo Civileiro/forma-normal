@@ -141,6 +141,7 @@ std::vector<mapa_vars_t> FormaNormal::getKarnaugh(bool isFNC) const {
 		return rhs.size() > lhs.size();
 	});
 	std::vector<uint64_t> winnerBitStates;
+	int totalCircles = 0;
 	for (auto &comb : allVarCombinations) {
 		const auto tamanho = std::pow(2, comb.size());
 		std::vector<uint64_t> allBitStates;
@@ -153,8 +154,7 @@ std::vector<mapa_vars_t> FormaNormal::getKarnaugh(bool isFNC) const {
 			}
 			const auto bitState = tbs.toBitState(comb);
 
-				allBitStates.push_back(bitState);
-			
+			allBitStates.push_back(bitState);
 		}
 		for (const auto bitState : allBitStates) {
 			bool hasUncircled = false;
@@ -164,19 +164,23 @@ std::vector<mapa_vars_t> FormaNormal::getKarnaugh(bool isFNC) const {
 				if (TabelaBitState::bitStateIncludes(bitState, line.bitState)) {
 					hasUncircled |= !line.hasCircle;
 					count++;
-				} 
+				}
 			}
 
 			if (hasUncircled && count == tabSize / tamanho) {
 				winnerBitStates.push_back(bitState);
 				for (auto &line : results) {
 					if (TabelaBitState::bitStateIncludes(bitState, line.bitState)) {
+						totalCircles += !line.hasCircle;
 						line.hasCircle = true;
 					}
 				}
 			}
+			if (totalCircles == results.size()) break;
 		}
 	}
+	std::sort(winnerBitStates.begin(), winnerBitStates.end(), std::less<uint64_t>());
+
 	std::vector<mapa_vars_t> result;
 	result.reserve(winnerBitStates.size());
 	for (const auto bitState : winnerBitStates) {
@@ -184,7 +188,6 @@ std::vector<mapa_vars_t> FormaNormal::getKarnaugh(bool isFNC) const {
 		for (auto &[var, state] : clausula) state = state ^ isFNC;
 		result.push_back(clausula);
 	}
-	std::sort(result.begin(), result.end());
 	return result;
 }
 std::string FormaNormal::formatClausula(const std::vector<mapa_vars_t> &clausulas, const char32_t inner, const char32_t outer) {
