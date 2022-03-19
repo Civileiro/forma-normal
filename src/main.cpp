@@ -430,6 +430,7 @@ int main(int, char**)
     //IM_ASSERT(font != NULL);
     AppFN fn;
     fn.loadFonts(io);
+    io.IniFilename = nullptr;
     // Upload Fonts
     {
         // Use any command queue

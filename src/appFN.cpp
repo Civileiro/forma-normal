@@ -4,10 +4,10 @@
 
 #include <utf8.h>
 
+#include <cmath>
 #include <iostream>
 #include <string.h>
 #include <string_view>
-#include <cmath>
 
 namespace ImGuiHelper {
 
@@ -15,7 +15,7 @@ void TextCentered(std::string_view text) {
 	auto windowWidth = ImGui::GetWindowSize().x;
 	auto textWidth = ImGui::CalcTextSize(text.data()).x;
 
-	if(textWidth < 800) ImGui::SetCursorPosX((windowWidth - textWidth) * 0.5f);
+	if (textWidth < 800) ImGui::SetCursorPosX((windowWidth - textWidth) * 0.5f);
 	ImGui::TextWrapped(text.data());
 }
 
@@ -27,7 +27,7 @@ int inputCallback(ImGuiInputTextCallbackData *data) {
 	data->CursorPos += myData->addCursor();
 	static std::string oldText;
 	static bool doProcess = false;
-	if(doProcess) {
+	if (doProcess) {
 		myData->processInput();
 		doProcess = false;
 	}
@@ -40,7 +40,7 @@ int inputCallback(ImGuiInputTextCallbackData *data) {
 }
 
 int AppFN::addCursor() {
-	if(hasToAdd) {
+	if (hasToAdd) {
 		hasToAdd = false;
 		return amountToAdd;
 	}
@@ -69,9 +69,9 @@ void AppFN::drawWindowAndProcess() {
 	ImGui::PushFont(fonts["droid54"]);
 	if (ImGui::Begin("Example: Fullscreen window", nullptr, flags)) {
 		if (ImGui::BeginChild("Tabela Verdade", ImVec2 {-800, 0}, true, ImGuiWindowFlags_NoDecoration)) {
-			if (!inputValid ) {
+			if (!inputValid) {
 				ImGuiHelper::TextCentered("Input Invalido!");
-			} else if(tv.getTabela().size() > 1200) {
+			} else if (tv.getTabela().size() > 1200) {
 				ImGuiHelper::TextCentered("Tabela Verdade muito grande para mostrar");
 			} else {
 				secaoTabela();
@@ -85,10 +85,9 @@ void AppFN::drawWindowAndProcess() {
 			}
 			ImGui::EndChild();
 			if (ImGui::BeginChild("Formas Normais", ImVec2 {0, 0}, true, ImGuiWindowFlags_NoDecoration)) {
-				if(tooBig) {
+				if (tooBig) {
 					ImGuiHelper::TextCentered("Muitas variaveis para computar!");
-				}
-				else if (inputValid) secaoFormas();
+				} else if (inputValid) secaoFormas();
 			}
 			ImGui::EndChild();
 		}
@@ -96,12 +95,14 @@ void AppFN::drawWindowAndProcess() {
 	}
 	ImGui::End();
 	ImGui::PopFont();
+	// ImGui::ShowDemoWindow();
 }
 void AppFN::secaoTabela() {
 	ImGui::PushFont(fonts["math36"]);
 	const auto tabela = tv.getTabela();
 	const auto tableWidth = tabela[0].first.size() + 1;
 	if (ImGui::BeginTable("table1", tableWidth, ImGuiTableFlags_Borders | ImGuiTableFlags_ScrollY)) {
+		// ImGui::TableSetupScrollFreeze(1, 1);
 		for (const auto &[name, state] : tabela[0].first) {
 			ImGui::TableSetupColumn(utf8::utf32to8(std::u32string {name}).data(), ImGuiTableColumnFlags_WidthFixed);
 		}
@@ -158,7 +159,7 @@ void AppFN::secaoInput() {
 			std::copy(cu8.begin(), cu8.end(), text.begin() + cursorPos);
 			text[tam + cu8.size()] = '\0';
 			ImGui::SetKeyboardFocusHere(inputHead);
-			
+
 			amountToAdd = cu8.size();
 			hasToAdd = true;
 		}
@@ -184,7 +185,7 @@ void AppFN::secaoFormas() {
 	ImGui::PushFont(fonts["math36"]);
 	ImGuiHelper::TextCentered(FormaNormal::formatClausula(fn.getFNC(), U'∨', U'∧'));
 	ImGui::PopFont();
-	
+
 	ImGui::SetCursorPosY(ImGui::GetCursorPos().y + 50);
 	ImGuiHelper::TextCentered("Forma Normal Disjuntiva:");
 	ImGui::PushFont(fonts["math36"]);
@@ -195,9 +196,9 @@ void AppFN::secaoFormas() {
 
 void AppFN::processInput() {
 	try {
-		tv = TabelaVerdade{text.data()};
-		if(tv.getTabela().size() <= std::pow(2, 15)) {
-			fn = FormaNormal{tv.getTabela()};
+		tv = TabelaVerdade {text.data()};
+		if (tv.getTabela().size() <= std::pow(2, 15)) {
+			fn = FormaNormal {tv.getTabela()};
 			tooBig = false;
 		} else {
 			tooBig = true;
@@ -205,7 +206,7 @@ void AppFN::processInput() {
 		inputValid = true;
 	} catch (InvalidFormulaException &e) {
 		inputValid = false;
-		//std::cout << e.what() << '\n';
+		// std::cout << e.what() << '\n';
 	}
 }
 
