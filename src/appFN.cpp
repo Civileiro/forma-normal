@@ -7,6 +7,7 @@
 #include <iostream>
 #include <string.h>
 #include <string_view>
+#include <cmath>
 
 namespace ImGuiHelper {
 
@@ -84,7 +85,7 @@ void AppFN::drawWindowAndProcess() {
 			}
 			ImGui::EndChild();
 			if (ImGui::BeginChild("Formas Normais", ImVec2 {0, 0}, true, ImGuiWindowFlags_NoDecoration)) {
-				if(tv.getTabela().size() > 600) {
+				if(tooBig) {
 					ImGuiHelper::TextCentered("Muitas variaveis para computar!");
 				}
 				else if (inputValid) secaoFormas();
@@ -195,7 +196,12 @@ void AppFN::secaoFormas() {
 void AppFN::processInput() {
 	try {
 		tv = TabelaVerdade{text.data()};
-		fn = FormaNormal{tv.getTabela()};
+		if(tv.getTabela().size() <= std::pow(2, 12)) {
+			fn = FormaNormal{tv.getTabela()};
+			tooBig = false;
+		} else {
+			tooBig = true;
+		}
 		inputValid = true;
 	} catch (InvalidFormulaException &e) {
 		inputValid = false;

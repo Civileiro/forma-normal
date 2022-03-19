@@ -25,6 +25,7 @@ class AppFN {
 	int cursorPos;
 	int amountToAdd;
 	int hasToAdd = false;
+	bool tooBig = false;
 
 	void secaoTabela();
 	void secaoInput();

@@ -55,135 +55,7 @@ auto acharForaParenteses(std::u32string::iterator ini, std::u32string::iterator 
 	}
 	return fim;
 }
-std::vector<mapa_vars_t> FormaNormal::getFNCunop() const {
-	std::vector<mapa_vars_t> clausulas;
-	for (const auto &[mapa_vars, result] : tabela) {
-		if (result == false) {
-			auto clausula = mapa_vars;
-			for (auto &[var, state] : clausula) {
-				state = !state;
-			}
-			clausulas.push_back(clausula);
-		}
-	}
-	// simplifyFormula(clausulas);
-	return clausulas;
-}
-std::vector<mapa_vars_t> FormaNormal::getFNDunop() const {
-	std::vector<mapa_vars_t> clausulas;
-	for (const auto &[mapa_vars, result] : tabela) {
-		if (result) {
-			clausulas.push_back(mapa_vars);
-		}
-	}
-	// simplifyFormula(clausulas);
-	return clausulas;
-}
-/*
-template <typename Map>
-bool key_compare(const Map &lhs, const Map &rhs) {
-	return lhs.size() == rhs.size() && std::equal(lhs.begin(), lhs.end(), rhs.begin(), [](auto a, auto b) {
-			   return a.first == b.first;
-		   });
-}
-template <typename Map>
-char32_t keyprime(const Map &lhs, const Map &rhs) {
-	if (lhs.size() >= rhs.size()) return {};
-	int diffs {};
-	char32_t differ = 0;
-	for (const auto [var, state] : lhs) {
-		if (rhs.find(var) == rhs.end()) return {};
-		if (rhs.find(var)->second != state) {
-			diffs++;
-			differ = var;
-		}
-		if (diffs > 1) return {};
-	}
-	return differ;
-}
-template <typename Map>
-bool keysubset(const Map &lhs, const Map &rhs) {
-	if (lhs.size() > rhs.size()) return false;
-	for (const auto [var, state] : lhs) {
-		const auto itFound = rhs.find(var);
-		if (itFound == rhs.end()) return false;
-		if (itFound->second != state) return false;
-	}
-	return true;
-}
 
-void FormaNormal::simplifyFormula(std::vector<mapa_vars_t> &clausulas) {
-	if (clausulas.size() == 0 || clausulas.size() == 1) return;
-	for (bool change = true; change;) {
-		change = false;
-		for (int i = 0; i < clausulas.size() - 1; i++) {
-			for (int j = i + 1; j < clausulas.size(); j++) {
-				auto c1i = i, c2i = j;
-				if (clausulas[i].size() > clausulas[j].size()) {
-					std::swap(c1i, c2i);
-				}
-				auto &c1 = clausulas[c1i];
-				auto &c2 = clausulas[c2i];
-				// test if theres only 1 negated var diff
-				if (key_compare(c1, c2)) {
-					int diffs = 0;
-					char32_t differ;
-					for (const auto &[var, state] : c1) {
-						if (state != c2[var]) {
-							diffs++;
-							if (diffs > 1) break;
-							differ = var;
-						}
-					}
-					if (diffs == 1) {
-						c1.erase(differ);
-						clausulas.erase(clausulas.begin() + c2i);
-						change = true;
-						goto exit_loops;
-					}
-				}
-				if (const auto differ = keyprime(c1, c2); differ != char32_t {}) {
-					c2.erase(differ);
-					change = true;
-					goto exit_loops;
-				}
-
-				// if (c1.size() == 1) {
-				// 	const auto var = c1.begin()->first;
-				// 	if (c2.find(var) != c2.end() && c2.find(var)->second == c1.begin()->second) {
-				// 		// std::cout << formatClausula({c1, c2}, ',', ':') << '\n';
-				// 		clausulas.erase(clausulas.begin() + c2i);
-				// 		change = true;
-				// 		goto exit_loops;
-				// 	}
-				// }
-				if (keysubset(c1, c2)) {
-					clausulas.erase(clausulas.begin() + c2i);
-					change = true;
-					goto exit_loops;
-				}
-				if (c1 == c2) {
-					clausulas.erase(clausulas.begin() + c2i);
-					change = true;
-					goto exit_loops;
-				}
-			}
-		}
-	exit_loops:;
-	}
-	if (clausulas[0].size() == 0) clausulas[0][0] = true;
-	std::sort(clausulas.begin(), clausulas.end());
-}*/
-template <typename Map>
-bool keysubset(const Map &lhs, const Map &rhs) {
-	if (lhs.size() > rhs.size()) return false;
-	for (const auto [var, state] : lhs) {
-		const auto itFound = rhs.find(var);
-		if (itFound == rhs.end()) return false;
-		if (itFound->second != state) return false;
-	}
-	return true;
-}
 struct TabelaLine {
 	uint64_t bitState;
 	bool hasCircle;
@@ -222,8 +94,6 @@ struct TabelaBitState {
 		return mapa;
 	}
 	static bool bitStateIncludes(const uint64_t checker, const uint64_t checked) {
-		const auto res = (checker & checked) == checker;
-		// std::cout << "checking " << checker << " with " << checked << "  " << res << '\n';
 		return (checker & checked) == checker;
 	}
 };
@@ -244,21 +114,12 @@ std::vector<mapa_vars_t> FormaNormal::getKarnaugh(bool isFNC) const {
 	for (const auto &[mapa, result] : tabela) {
 		if (result ^ isFNC) results.push_back({tbs.toBitState(mapa), false});
 	}
-	/*
-	std::cout << "eh FNC? " << isFNC << '\n';
-	for (const auto line : results) {
-		std::cout << "b: " << line.bitState << '\n';
-	}*/
-	// std::cout << "tam results: " << results.size() << '\n';
-	// std::cout << "tam vars: " << vars.size() << '\n';
-	// std::cout << "tam tam: " << tabSize << '\n';
 
 	if (results.size() == 0 && isFNC || results.size() == tabSize && !isFNC) return {tautologia};
 	if (results.size() == 0 && !isFNC || results.size() == tabSize && isFNC) return {contradicao};
 
 	std::vector<std::vector<std::pair<char32_t, bool>>> allVarCombinations;
 	allVarCombinations.reserve(tabSize);
-	// std::cout << "tam allvars: " << allVarCombinations.size() << '\n';
 	bool first = true;
 	for (uint64_t i {0}; i < tabSize; i++) {
 		if (first) {
@@ -270,14 +131,12 @@ std::vector<mapa_vars_t> FormaNormal::getKarnaugh(bool isFNC) const {
 		varComb.reserve(vars.size());
 		for (const auto [nome, valor] : vars) {
 			if ((i & (1ull << j)) != 0) {
-				// std::cout << "i j: " << i << "  " << j << '\n';
 				varComb.push_back(vars[j]);
 			}
 			j++;
 		}
 		allVarCombinations.push_back(std::move(varComb));
 	}
-	// std::cout << "tam allvars: " << allVarCombinations.size() << '\n';
 	std::sort(allVarCombinations.begin(), allVarCombinations.end(), [](auto lhs, auto rhs) {
 		return rhs.size() > lhs.size();
 	});
@@ -293,19 +152,10 @@ std::vector<mapa_vars_t> FormaNormal::getKarnaugh(bool isFNC) const {
 				j++;
 			}
 			const auto bitState = tbs.toBitState(comb);
-			/*bool found = false;
-			for (const auto winner : winnerBitStates) {
-				if (TabelaBitState::bitStateIncludes(winner, bitState)) {
-					found = true;
-					break;
-				}
-			} 
-			if (!found)*/ {
+
 				allBitStates.push_back(bitState);
-				// std::cout << "a bitstate found: " << bitState << '\n';
-			}
+			
 		}
-		// std::cout << "all bits size: " << allBitStates.size() << '\n';
 		for (const auto bitState : allBitStates) {
 			bool hasUncircled = false;
 
@@ -314,19 +164,13 @@ std::vector<mapa_vars_t> FormaNormal::getKarnaugh(bool isFNC) const {
 				if (TabelaBitState::bitStateIncludes(bitState, line.bitState)) {
 					hasUncircled |= !line.hasCircle;
 					count++;
-				} else {
-					//success = false;
-					// break;
-				}
+				} 
 			}
-			// std::cout << "tabsize: " << tabSize << "\ntamanho: " << tamanho << "\ncount: " << count << '\n';
 
 			if (hasUncircled && count == tabSize / tamanho) {
-				// std::cout << "winner: " << bitState << '\n';
 				winnerBitStates.push_back(bitState);
 				for (auto &line : results) {
 					if (TabelaBitState::bitStateIncludes(bitState, line.bitState)) {
-						// std::cout << "cleaning\n";
 						line.hasCircle = true;
 					}
 				}
@@ -341,8 +185,6 @@ std::vector<mapa_vars_t> FormaNormal::getKarnaugh(bool isFNC) const {
 		result.push_back(clausula);
 	}
 	std::sort(result.begin(), result.end());
-	// std::cout << "result size: " << result.size() << '\n';
-	// std::cout << "winners size: " << winnerBitStates.size() << '\n';
 	return result;
 }
 std::string FormaNormal::formatClausula(const std::vector<mapa_vars_t> &clausulas, const char32_t inner, const char32_t outer) {

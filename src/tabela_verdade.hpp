@@ -8,6 +8,7 @@
 #include <tuple>
 #include <vector>
 
+
 using mapa_vars_t = std::map<char32_t, bool>;
 using tabela_t = std::vector<std::pair<mapa_vars_t, bool>>;
 
@@ -30,8 +31,6 @@ class FormaNormal {
 	static std::string formatClausula(const std::vector<mapa_vars_t> &clausulas, const char32_t inner, const char32_t outer);
 
   private:
-	std::vector<mapa_vars_t> getFNCunop() const;
-	std::vector<mapa_vars_t> getFNDunop() const;
 	std::vector<mapa_vars_t> getKarnaugh(bool isFNC) const;
 	tabela_t tabela;
 	std::vector<mapa_vars_t> clausulasFNC;
