@@ -59,19 +59,16 @@ set(UTF8_DIR external/utfcpp)
 add_subdirectory(${UTF8_DIR})
 
 # Libraries
-find_package(Vulkan REQUIRED)
-#find_library(VULKAN_LIBRARY
-  #NAMES vulkan vulkan-1)
-#set(LIBRARIES "glfw;${VULKAN_LIBRARY}")
-set(LIBRARIES "glfw;Vulkan::Vulkan;utf8cpp")
+find_package(OpenGL REQUIRED)
 
-# Use vulkan headers from glfw:
-include_directories(${GLFW_DIR}/deps)
+set(LIBRARIES "glfw;utf8cpp")
+
+include_directories(${GLFW_DIR}/deps ${OPENGL_INCLUDE_DIRS})
 
 file(GLOB sources src/*.cpp)
 
-add_executable(calc_normal ${sources} ${IMGUI_DIR}/backends/imgui_impl_glfw.cpp ${IMGUI_DIR}/backends/imgui_impl_vulkan.cpp ${IMGUI_DIR}/imgui.cpp ${IMGUI_DIR}/imgui_draw.cpp ${IMGUI_DIR}/imgui_demo.cpp ${IMGUI_DIR}/imgui_tables.cpp ${IMGUI_DIR}/imgui_widgets.cpp)
-target_link_libraries(calc_normal ${LIBRARIES})
+add_executable(calc_normal ${sources} ${IMGUI_DIR}/backends/imgui_impl_glfw.cpp ${IMGUI_DIR}/backends/imgui_impl_opengl3.cpp ${IMGUI_DIR}/imgui.cpp ${IMGUI_DIR}/imgui_draw.cpp ${IMGUI_DIR}/imgui_demo.cpp ${IMGUI_DIR}/imgui_tables.cpp ${IMGUI_DIR}/imgui_widgets.cpp)
+target_link_libraries(calc_normal ${LIBRARIES} ${OPENGL_LIBRARIES})
 
 target_compile_definitions(calc_normal PUBLIC -DImTextureID=ImU64)
 
