@@ -68,7 +68,7 @@ include_directories(${GLFW_DIR}/deps ${OPENGL_INCLUDE_DIRS})
 file(GLOB sources src/*.cpp)
 
 add_executable(CalculadoraFN ${sources} ${IMGUI_DIR}/backends/imgui_impl_glfw.cpp ${IMGUI_DIR}/backends/imgui_impl_opengl3.cpp ${IMGUI_DIR}/imgui.cpp ${IMGUI_DIR}/imgui_draw.cpp ${IMGUI_DIR}/imgui_demo.cpp ${IMGUI_DIR}/imgui_tables.cpp ${IMGUI_DIR}/imgui_widgets.cpp)
-target_link_libraries(CalculadoraFN ${LIBRARIES})
+target_link_libraries(CalculadoraFN ${LIBRARIES} ${OPENGL_LIBRARIES})
 
 target_compile_definitions(CalculadoraFN PUBLIC -DImTextureID=ImU64)
 
