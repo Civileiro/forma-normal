@@ -8,7 +8,6 @@
 #include <tuple>
 #include <vector>
 
-
 using mapa_vars_t = std::map<char32_t, bool>;
 using tabela_t = std::vector<std::pair<mapa_vars_t, bool>>;
 
@@ -21,7 +20,7 @@ class InvalidFormulaException : public std::runtime_error {
 class FormaNormal {
   public:
 	FormaNormal() = default;
-	FormaNormal(const tabela_t &tabela) : tabela {tabela}, clausulasFNC{getKarnaugh(true)}, clausulasFND{getKarnaugh(false)} {}
+	FormaNormal(const tabela_t &tabela) : tabela {tabela}, clausulasFNC {getKarnaugh(true)}, clausulasFND {getKarnaugh(false)} {}
 	std::vector<mapa_vars_t> getFNC() const {
 		return clausulasFNC;
 	}
