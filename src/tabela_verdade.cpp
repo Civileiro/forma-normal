@@ -96,7 +96,13 @@ struct TabelaBitState {
 	static bool bitStateIncludes(const uint64_t checker, const uint64_t checked) {
 		return (checker & checked) == checker;
 	}
+	static bool bitStateIncludesVars(const uint64_t checker, const uint64_t checked) {
+		const auto checkerPure = (checker | (checker >> 32)) & 0x0000FFFF;
+		const auto checkedPure = (checked | (checked >> 32)) & 0x0000FFFF;
+		return (checkerPure & checkedPure) == checkerPure;
+	}
 };
+// benchmark: a→b→c→d→e→f→g→h→i→j→k→l→m→n→o
 std::vector<mapa_vars_t> FormaNormal::getKarnaugh(bool isFNC) const {
 	mapa_vars_t m;
 	m[0] = true;
@@ -143,6 +149,16 @@ std::vector<mapa_vars_t> FormaNormal::getKarnaugh(bool isFNC) const {
 	std::vector<uint64_t> winnerBitStates;
 	int totalCircles = 0;
 	for (auto &comb : allVarCombinations) {
+		{
+			bool endLoop = false;
+			for (const auto winner : winnerBitStates) {
+				if (TabelaBitState::bitStateIncludesVars(winner, tbs.toBitState(comb))) {
+					endLoop = true;
+					break;
+				}
+			}
+			if (endLoop) continue;
+		}
 		const auto tamanho = std::pow(2, comb.size());
 		std::vector<uint64_t> allBitStates;
 		allBitStates.reserve(tamanho);
