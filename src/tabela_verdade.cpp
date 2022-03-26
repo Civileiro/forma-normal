@@ -143,12 +143,19 @@ std::vector<mapa_vars_t> FormaNormal::getKarnaugh(bool isFNC) const {
 		}
 		allVarCombinations.push_back(std::move(varComb));
 	}
-	std::sort(allVarCombinations.begin(), allVarCombinations.end(), [](auto lhs, auto rhs) {
+	auto sortVars = [](auto lhs, auto rhs) {
 		return rhs.size() > lhs.size();
-	});
+	};
+	if(results.size() < tabela[0].first.size()) {
+		std::sort(allVarCombinations.rbegin(), allVarCombinations.rend(), sortVars);
+	} else {
+		std::sort(allVarCombinations.begin(), allVarCombinations.end(), sortVars);
+	}
 	std::vector<uint64_t> winnerBitStates;
 	int totalCircles = 0;
 	for (auto &comb : allVarCombinations) {
+		std::cout << "ha " << totalCircles << " < " << results.size() << '\n';
+		if (totalCircles == results.size()) break;
 		{
 			bool endLoop = false;
 			for (const auto winner : winnerBitStates) {
@@ -204,6 +211,7 @@ std::vector<mapa_vars_t> FormaNormal::getKarnaugh(bool isFNC) const {
 		for (auto &[var, state] : clausula) state = state ^ isFNC;
 		result.push_back(clausula);
 	}
+	std::cout << "end" << isFNC << '\n';
 	return result;
 }
 std::string FormaNormal::formatClausula(const std::vector<mapa_vars_t> &clausulas, const char32_t inner, const char32_t outer) {
