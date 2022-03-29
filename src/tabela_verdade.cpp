@@ -154,7 +154,6 @@ std::vector<mapa_vars_t> FormaNormal::getKarnaugh(bool isFNC) const {
 	std::vector<uint64_t> winnerBitStates;
 	int totalCircles = 0;
 	for (auto &comb : allVarCombinations) {
-		std::cout << "ha " << totalCircles << " < " << results.size() << '\n';
 		if (totalCircles == results.size()) break;
 		{
 			bool endLoop = false;
@@ -211,7 +210,6 @@ std::vector<mapa_vars_t> FormaNormal::getKarnaugh(bool isFNC) const {
 		for (auto &[var, state] : clausula) state = state ^ isFNC;
 		result.push_back(clausula);
 	}
-	std::cout << "end" << isFNC << '\n';
 	return result;
 }
 std::string FormaNormal::formatClausula(const std::vector<mapa_vars_t> &clausulas, const char32_t inner, const char32_t outer) {
