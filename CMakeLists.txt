@@ -72,4 +72,6 @@ target_link_libraries(CalculadoraFN ${LIBRARIES} ${OPENGL_LIBRARIES})
 
 target_compile_definitions(CalculadoraFN PUBLIC -DImTextureID=ImU64)
 
-target_compile_features(CalculadoraFN PUBLIC cxx_std_17)
+set_property(TARGET CalculadoraFN PROPERTY CXX_STANDARD 17)
+
+install(TARGETS CalculadoraFN)
